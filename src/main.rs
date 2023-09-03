@@ -11,7 +11,7 @@ use std::{io::{ BufReader, BufRead }, fs::File };
     format:
         16 characters, first 4 are instruction, the rest are arguments -- handled by the instruction i guess
     instructions
-        0000 ???
+        0000 = hlt = halt
         0001 = srv register value -- sets value to register
         0010 = add register1 register2 register3
         0011 = sub register1 register2 register3
@@ -21,12 +21,11 @@ use std::{io::{ BufReader, BufRead }, fs::File };
         0111 = and register1 register2 register3      
         1000 = xor register1 register2 register3       register is 4 bits
         1001 = jmp position position is 6 bits
-        1010 = jmz position
+        1010 = jrz register position
         1011 = set position register position 6 bits, register 4 bits
         1100 = read position register
-        1101 = not register
-        1110 = equ register
-        1111 = out register
+        1101 = out register
+        1110 = cht register
 
          
         the trick is to >> 12 the instruction to get instruction id
@@ -105,14 +104,15 @@ fn parse_args(_args: u16, types: Vec<Type>) -> Vec<u16> {
 fn machine(instructions: Vec<u16>) {
     let mut registers: Vec<u8> = vec![0; 16];
     let mut action: usize = 0;
-    loop {
-        if action == instructions.len() {
-            break;
-        }
+    let mut storage: Vec<u8> = vec![0; 64];
 
+    loop {
         let instruction: &u16 = &instructions[action];
         let (id, args) = parse_instruction(instruction);
         match id {
+            0 => {
+                break;
+            }
             1 => { // srv
                 let values = parse_args(args, vec![Type::Register, Type::Value]);
                 registers[values[0] as usize] = values[1] as u8;
@@ -148,11 +148,31 @@ fn machine(instructions: Vec<u16>) {
             9 => { // jmp
                 let values = parse_args(args, vec![Type::Position]);
                 action = values[0] as usize;
+                continue;
             },
-            10 => { // jmz
-                let values = parse_args(args, vec![Type::Position]);
-                action = values[0] as usize;
-            }
+            10 => { // jrz
+                let values = parse_args(args, vec![Type::Register, Type::Position]);
+                if registers[values[0] as usize] == 0 {
+                    action = values[1] as usize;
+                    continue;
+                }
+            },
+            11 => { // set
+                let values = parse_args(args, vec![Type::Position, Type::Register]);
+                storage[values[0] as usize] = registers[values[1] as usize];
+            },
+            12 => { // get
+                let values = parse_args(args, vec![Type::Position, Type::Register]);
+                registers[values[1] as usize] = storage[values[0] as usize];
+            },
+            13 => { // out
+                let values = parse_args(args, vec![Type::Register]);
+                print!("{}", registers[values[0] as usize]);
+            },
+            14 => { // cht
+                let values = parse_args(args, vec![Type::Register]);
+                print!("{}", char::from_u32(registers[values[0] as usize] as u32).unwrap());
+            },
             _ => {
                 panic!("not implemented");
             }
@@ -160,7 +180,7 @@ fn machine(instructions: Vec<u16>) {
         action += 1;
     }
 
-    println!("{:?}", registers);
+    //println!("{:?}", registers);
 }
 
 fn main() {

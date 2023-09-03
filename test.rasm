@@ -1,0 +1,7 @@
+srv 0 5
+srv 1 1
+sub 0 1 0
+out 0
+jrz 0 6
+jmp 2
+hlt
