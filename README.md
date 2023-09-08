@@ -14,6 +14,8 @@ You can technicaly use any register to do anything you want, but standartization
 | 2 | variable address | 
 | 3 | variable output | 
 | 4 | low level helping register |
+| 5 | expression value register |
+| 15 | zero |
 
 and the rest is for arguments and stuff like that
 

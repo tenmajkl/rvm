@@ -47,4 +47,5 @@ parseArgs _ = Nothing
 
 parse :: [Token] -> Maybe [AST]
 parse [] = Just []
+parse [Whitespace] = Just []
 parse x = parseExpression x >>= (\(node, rest) -> parse rest >>= (\rest -> Just (node : rest)))

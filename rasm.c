@@ -156,9 +156,9 @@ int translateInstruction(char* instruction, Label labels[], int label_count, uin
         }
 
         result[0] = 11;
-        result[1] = arg1 / 16; 
-        result[2] = arg1 % 16;
-        result[3] = arg2;
+        result[1] = arg1; 
+        result[2] = arg2;
+        result[3] = 0;
         return 1;
     }
 
@@ -174,9 +174,9 @@ int translateInstruction(char* instruction, Label labels[], int label_count, uin
         }
 
         result[0] = 12;
-        result[1] = arg1 / 16; 
-        result[2] = arg1 % 16;
-        result[3] = arg2;
+        result[1] = arg1; 
+        result[2] = arg2;
+        result[3] = 0;
         return 1;
     }
 

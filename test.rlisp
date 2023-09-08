@@ -1,0 +1,3 @@
+(let parek int 10) 
+(let rizek int (+ parek 2)) 
+(out rizek)

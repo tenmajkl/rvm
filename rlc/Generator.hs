@@ -34,8 +34,16 @@ generateExpression (NumberNode n) v reg = Just ("srv " ++ show reg ++ " " ++ sho
 generateExpression (CharNode c) v reg = Just ("srv " ++ show reg ++ " " ++ show (ord c) ++ "\n")
 generateExpression (WordNode w) v reg = do 
     (_, address, t) <- find (\(x, _, _) -> x == w) v
-    return ("srv 6 " ++ show address ++ "\nadd 1 6 4\nget 4 " ++ show reg ++ "\n")
-generateExpression _ _ _ = Nothing
+    return ("srv 4 " ++ show address ++ "\nadd 1 4 4\nget 4 " ++ show reg ++ "\n")
+generateExpression x v reg = do
+    (expr, _) <- generateList x v
+    return (expr ++ "add 5 15 " ++ show reg ++ "\n")
+
+generateOperator :: AST -> AST -> String -> [Variable] -> Maybe (String, [Variable])
+generateOperator x y instruction variables = do
+    x <- generateExpression x variables 6 
+    y <- generateExpression y variables 7
+    return (x ++ y ++ instruction ++ " 6 7 5\n", variables)
 
 -- todo better conversion
 generateList :: Generator 
@@ -46,6 +54,15 @@ generateList (ListNode "let" [WordNode x, WordNode y, z]) variables = do
 generateList (ListNode "out" [x]) variables = do 
     e <- generateExpression x variables 5
     return (e ++ "out 5\n", variables)
+generateList (ListNode "+" [x, y]) variables = generateOperator x y "add" variables
+generateList (ListNode "-" [x, y]) variables = generateOperator x y "sub" variables
+generateList (ListNode "*" [x, y]) variables = generateOperator x y "mul" variables
+generateList (ListNode "/" [x, y]) variables = generateOperator x y "div" variables
+generateList (ListNode "|" [x, y]) variables = generateOperator x y "oor" variables
+generateList (ListNode "&" [x, y]) variables = generateOperator x y "and" variables
+generateList (ListNode "^" [x, y]) variables = generateOperator x y "xor" variables
+-- generateList (ListNode "=" [x, y]) variables = generateOperator x y "sub" variables
+-- generateList (ListNode "if" [x, y, z])
 generateList _ _ = Nothing
 
 -- Constant for code that provides popping
