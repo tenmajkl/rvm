@@ -1,4 +1,4 @@
-use std::{io::{ BufReader, BufRead }, fs::File };
+use std::{io::{ BufReader, BufRead }, fs::File, env };
 
 /**
 
@@ -184,7 +184,9 @@ fn machine(instructions: Vec<u16>) {
 }
 
 fn main() {
-    let file = File::open("test.rbf").expect("parek");
+    let mut args = env::args();
+    let filename = args.nth(1).unwrap();
+    let file = File::open(&filename).expect("parek");
     let reader = BufReader::new(file);
     let instructions = load_instructions(reader);
     machine(instructions);

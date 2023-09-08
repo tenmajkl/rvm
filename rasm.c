@@ -144,8 +144,8 @@ int translateInstruction(char* instruction, Label labels[], int label_count, uin
         return 1;
     }
 
-    if (sscanf(instruction, "set %i %i", &arg1, &arg2) == 1) {
-        if (arg1 > 63) {
+    if (sscanf(instruction, "set %i %i", &arg1, &arg2) == 2) {
+        if (arg1 > 15) {
             puts("position value too big");
 			return 0;
         }
@@ -162,8 +162,8 @@ int translateInstruction(char* instruction, Label labels[], int label_count, uin
         return 1;
     }
 
-    if (sscanf(instruction, "get %i %i", &arg1, &arg2) == 1) {
-        if (arg1 > 63) {
+    if (sscanf(instruction, "get %i %i", &arg1, &arg2) == 2) {
+        if (arg1 > 15) {
             puts("position value too big");
 			return 0;
         }
@@ -248,10 +248,14 @@ void translate(FILE* from, FILE* to)
 
 }
 
-int main(void)
+int main(int argc, char** argv)
 {
-    FILE* f = fopen("test.rasm", "r");
-    FILE* t = fopen("test.rbf", "wb");
+    if (argc < 3) {
+        return -1;
+    }
+
+    FILE* f = fopen(argv[1], "r");
+    FILE* t = fopen(argv[2], "wb");
     if (f == NULL || t == NULL) {
         puts("file not found");
         return -1;

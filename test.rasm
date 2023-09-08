@@ -1,10 +1,17 @@
 srv 0 0
-srv 1 1
-srv 2 0
-srv 3 0
-_loop:
-    add 0 1 2
-    out 0
-    add 3 2 0
-    jmp _loop
+srv 1 0
+srv 5 10
+srv 4 1
+set 0 5
+add 0 4 0
+srv 6 0
+add 1 6 4
+get 4 5
+srv 4 1
+set 0 5
+add 0 4 0
+srv 6 1
+add 1 6 4
+get 4 5
+out 5
 hlt
