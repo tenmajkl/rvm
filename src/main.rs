@@ -158,12 +158,12 @@ fn machine(instructions: Vec<u16>) {
                 }
             },
             11 => { // set
-                let values = parse_args(args, vec![Type::Position, Type::Register]);
-                storage[values[0] as usize] = registers[values[1] as usize];
+                let values = parse_args(args, vec![Type::Register, Type::Register]);
+                storage[registers[values[0] as usize] as usize] = registers[values[1] as usize];
             },
             12 => { // get
-                let values = parse_args(args, vec![Type::Position, Type::Register]);
-                registers[values[1] as usize] = storage[values[0] as usize];
+                let values = parse_args(args, vec![Type::Register, Type::Register]);
+                registers[values[1] as usize] = storage[registers[values[0] as usize] as usize];
             },
             13 => { // out
                 let values = parse_args(args, vec![Type::Register]);
