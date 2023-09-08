@@ -1,7 +1,10 @@
-srv 0 5
+srv 0 0
 srv 1 1
-sub 0 1 0
-out 0
-jrz 0 6
-jmp 2
+srv 2 0
+srv 3 0
+_loop:
+    add 0 1 2
+    out 0
+    add 3 2 0
+    jmp _loop
 hlt

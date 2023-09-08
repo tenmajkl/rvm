@@ -24,17 +24,27 @@
     }\
 
 typedef struct {
-    char* name;
+    char name[16];
     int action;
 } Label;
 
+int labelValue(Label labels[], int label_count, char* label)
+{
+    for (int index = 0; index < label_count; index++) {
+        if (strcmp(labels[index].name, label)) {
+            return labels[index].action;
+        }
+    }
 
+    return -1;
+}
 
 int translateInstruction(char* instruction, Label labels[], int label_count, uint8_t result[])
 {
     int arg1;   
     int arg2;
     int arg3;
+    char sarg[16];
 
     if (strcmp(instruction, "hlt") == 0) {
         result[0] = 0;
@@ -81,6 +91,21 @@ int translateInstruction(char* instruction, Label labels[], int label_count, uin
         return 1;
     }
 
+    if (sscanf(instruction, "jmp _%15s", sarg) == 1) {
+        arg1 = labelValue(labels, label_count, sarg);
+
+        if (arg1 == -1) {
+            printf("Label %s doesnt exist", sarg);
+            return 0;
+        }
+
+        result[0] = 9;
+        result[1] = arg1 / 16; 
+        result[2] = arg1 % 16;
+        result[3] = 0;
+        return 1;
+    }
+
     if (sscanf(instruction, "jrz %i %i", &arg1, &arg2) == 2) {
         if (arg1 > 15) {
             puts("register value too big");
@@ -89,6 +114,26 @@ int translateInstruction(char* instruction, Label labels[], int label_count, uin
 
         if (arg2 > 63) {
             puts("position value too big");
+            return 0;
+        }
+
+        result[0] = 10;
+        result[1] = arg1;
+        result[2] = arg2 / 16; 
+        result[3] = arg2 % 16;
+        return 1;
+    }
+
+    if (sscanf(instruction, "jrz %i _%15s", &arg1, sarg) == 2) {
+        if (arg1 > 15) {
+            puts("register value too big");
+            return 0;
+        }
+
+        arg2 = labelValue(labels, label_count, sarg);
+
+        if (arg2 == -1) {
+            printf("Label %s doesnt exist", sarg);
             return 0;
         }
 
@@ -181,16 +226,16 @@ void translate(FILE* from, FILE* to)
             continue;
         }
 
-        // if (line[0] == '_') {
-        //     labels[label_count].action = action + 1;
-        //     if (sscanf(line, "_%15s:", labels[label_count].name) != 1) {
-        //         puts("label not sytnacticaly correct");
-		// 	    return;
-        //     }
+        if (line[0] == '_') {
+            labels[label_count].action = action;
+            if (sscanf(line, "_%15s:", labels[label_count].name) != 1) {
+                puts("label not syntacticaly correct");
+		 	    return;
+            }
 
-        //     label_count++;
-        //     continue;    
-        // }
+            label_count++;
+            continue;    
+        }
 
         if (!translateInstruction(line, labels, label_count, instruction)) {
             printf("error at action %i", action);
