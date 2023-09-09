@@ -10,14 +10,15 @@ data Type =
 
 type Variable = (String, Int, Type)
 type Ifs = Int
+type Whiles = Int
 
-type Context = ([Variable], Ifs)
+type Context = ([Variable], Ifs, Whiles)
 
 type Generator = AST -> Context -> Maybe (String, Context)
 
 generate :: [AST] -> Maybe String
 generate x = do 
-    statements <- generateStatements x ([], 0)
+    statements <- generateStatements x ([], 0, 0)
     return ("srv 0 0\nsrv 1 0\n" ++ statements ++ "hlt")
 
 generateStatements :: [AST] -> Context -> Maybe String
@@ -35,7 +36,7 @@ generateStatement _ _ = Nothing
 generateExpression :: AST -> Context -> Int -> Maybe String
 generateExpression (NumberNode n) v reg = Just ("srv " ++ show reg ++ " " ++ show n ++ "\n")
 generateExpression (CharNode c) v reg = Just ("srv " ++ show reg ++ " " ++ show (ord c) ++ "\n")
-generateExpression (WordNode w) (v, _) reg = do 
+generateExpression (WordNode w) (v, _, _) reg = do 
     (_, address, t) <- find (\(x, _, _) -> x == w) v
     return ("srv 4 " ++ show address ++ "\nadd 1 4 4\nget 4 " ++ show reg ++ "\n")
 generateExpression x v reg = do
@@ -55,12 +56,23 @@ generateBlock (x:xs) y = do
     (rest, new_ctx) <- generateBlock xs ctx
     return (statement ++ rest, new_ctx)
 
+generateVariableAddress :: AST -> [Variable] -> Int ->  Maybe String 
+generateVariableAddress (WordNode w) vs reg = do 
+    (_, address, t) <- find (\(x, _, _) -> x == w) vs
+    return ("srv " ++ show reg ++ " " ++ show address ++ "\n")
+generateVariableAddress _ _ _ = Nothing 
+
+
 -- todo better conversion
 generateList :: Generator 
-generateList (ListNode "let" [WordNode x, WordNode y, z]) (variables, ifs) = do 
+generateList (ListNode "let" [WordNode x, WordNode y, z]) (variables, ifs, whiles) = do 
     t <- wordToType y
-    e <- generateExpression z (variables, ifs) 5
-    return (e ++ "srv 4 1\nset 0 5\nadd 0 4 0\n", ((x, length variables, t) : variables, ifs))
+    e <- generateExpression z (variables, ifs, whiles) 5
+    return (e ++ "srv 4 1\nset 0 5\nadd 0 4 0\n", ((x, length variables, t) : variables, ifs, whiles))
+generateList (ListNode "set" [x, y]) (variables, ifs, whiles) = do 
+    e <- generateExpression y (variables, ifs, whiles) 5 
+    addr <- generateVariableAddress x variables 4
+    return (e ++ addr ++ "set 4 5\n", (variables, ifs, whiles))
 generateList (ListNode "out" [x]) variables = do 
     e <- generateExpression x variables 5
     return (e ++ "sys 0 5\n", variables)
@@ -75,19 +87,29 @@ generateList (ListNode "|" [x, y]) variables = generateOperator x y "oor" variab
 generateList (ListNode "&" [x, y]) variables = generateOperator x y "and" variables
 generateList (ListNode "^" [x, y]) variables = generateOperator x y "xor" variables
 generateList (ListNode "=" [x, y]) variables = generateOperator x y "equ" variables
-generateList (ListNode "if" [x, y, z]) (variables, ifs) = do
-    e <- generateExpression x (variables, ifs) 5
-    (true, _) <- generateStatement y (variables, ifs)  
-    (false, _) <- generateStatement z (variables, ifs)  
-    return (e ++ "jrz 5 _else" ++ show ifs ++ "\n" ++ true ++ "jmp _end" ++ show ifs ++ "\n_else" ++ show ifs ++ ":\n" ++ false ++ "_end" ++ show ifs ++ ":\n", (variables, ifs + 1))
-generateList (ListNode "{-}" x) context = do 
-    (code, ctx) <- generateBlock x context 
-    return (code ++ (foldr (++) "" (map (const generatePop) [0..(length ctx - length context)])), context)
+generateList (ListNode "!" [x]) ctx = do 
+    expr <- generateExpression x ctx 5 
+    return (expr ++ "srv 4 1\nxor 5 4 5\n", ctx)
+generateList (ListNode "if" [x, y, z]) (variables, ifs, whiles) = do
+    e <- generateExpression x (variables, ifs, whiles) 5
+    (true, (true_variables, ifs, whiles)) <- generateStatement y (variables, ifs, whiles)  
+    (false, (false_variables, ifs, whiles)) <- generateStatement z (variables, ifs, whiles)  
+    return (e ++ "jrz 5 _else" ++ show ifs ++ "\n" ++ true ++ generateStackCleaning variables true_variables ++ "jmp _end" ++ show ifs ++ "\n_else" ++ show ifs ++ ":\n" ++ false ++ generateStackCleaning variables false_variables ++ "_end" ++ show ifs ++ ":\n", (variables, ifs + 1, whiles))
+generateList (ListNode "while" [x, y]) (variables, ifs, whiles) = do 
+    e <- generateExpression x (variables, ifs, whiles) 5
+    (code, (new_variables, ifs, whiles)) <- generateStatement y (variables, ifs, whiles)
+    return ("_while" ++ show whiles ++ ":\n" ++ e ++ "jrz 5 _endwhile" ++ show whiles ++ "\n" ++ code ++ "jmp _while" ++ show whiles ++ "\n_endwhile"++ show whiles ++ ":\n" ++ generateStackCleaning variables new_variables, (variables, ifs, whiles + 1))
+generateList (ListNode "{-}" x) (variables, ifs, whiles) = do 
+    (code, (new_variables, new_ifs, new_whiles)) <- generateBlock x (variables, ifs, whiles) 
+    return (code, (variables, new_ifs, new_whiles)) 
 generateList _ _ = Nothing
 
 -- Constant for code that provides popping
 generatePop :: String 
 generatePop = "srv 5 1\nsub 0 5 0\n"
+
+generateStackCleaning :: [Variable] -> [Variable] -> String
+generateStackCleaning variables new_variables = foldr (++) "" (map (const generatePop) [0..(length new_variables - length variables)])
 
 wordToType :: String -> Maybe Type
 wordToType "int" = Just Int
