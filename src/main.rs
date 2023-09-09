@@ -24,8 +24,8 @@ use std::{io::{ BufReader, BufRead }, fs::File, env };
         1010 = jrz register position
         1011 = set position register position 6 bits, register 4 bits
         1100 = read position register
-        1101 = out register
-        1110 = cht register
+        1101 = sys register register
+        1110 = equ register register register
 
          
         the trick is to >> 12 the instruction to get instruction id
@@ -165,13 +165,17 @@ fn machine(instructions: Vec<u16>) {
                 let values = parse_args(args, vec![Type::Register, Type::Register]);
                 registers[values[1] as usize] = storage[registers[values[0] as usize] as usize];
             },
-            13 => { // out
-                let values = parse_args(args, vec![Type::Register]);
-                print!("{}", registers[values[0] as usize]);
+            13 => { // sys
+                let values = parse_args(args, vec![Type::Register, Type::Register]);
+                match values[0] {
+                    0 => print!("{}", registers[values[1] as usize]),
+                    1 => print!("{}", char::from_u32(registers[values[1] as usize] as u32).unwrap()),
+                    _ => panic!("syscall doesnt exist")
+                };
             },
-            14 => { // cht
-                let values = parse_args(args, vec![Type::Register]);
-                print!("{}", char::from_u32(registers[values[0] as usize] as u32).unwrap());
+            14 => { // equ 
+                let values = parse_args(args, vec![Type::Register, Type::Register, Type::Register]); 
+                registers[values[2] as usize] = (registers[values[0] as usize] == registers[values[1] as usize]) as u8;
             },
             _ => {
                 panic!("not implemented");

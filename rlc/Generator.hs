@@ -48,6 +48,13 @@ generateOperator x y instruction variables = do
     y <- generateExpression y variables 7
     return (x ++ y ++ instruction ++ " 6 7 5\n", variables)
 
+generateBlock :: [AST] -> Context -> Maybe (String, Context)
+generateBlock [] x = Just ("", x)
+generateBlock (x:xs) y = do
+    (statement, ctx) <- generateStatement x y 
+    (rest, new_ctx) <- generateBlock xs ctx
+    return (statement ++ rest, new_ctx)
+
 -- todo better conversion
 generateList :: Generator 
 generateList (ListNode "let" [WordNode x, WordNode y, z]) (variables, ifs) = do 
@@ -56,10 +63,10 @@ generateList (ListNode "let" [WordNode x, WordNode y, z]) (variables, ifs) = do
     return (e ++ "srv 4 1\nset 0 5\nadd 0 4 0\n", ((x, length variables, t) : variables, ifs))
 generateList (ListNode "out" [x]) variables = do 
     e <- generateExpression x variables 5
-    return (e ++ "out 5\n", variables)
+    return (e ++ "sys 0 5\n", variables)
 generateList (ListNode "putchar" [x]) variables = do 
     e <- generateExpression x variables 5
-    return (e ++ "cht 5\n", variables)
+    return (e ++ "sys 1 5\n", variables)
 generateList (ListNode "+" [x, y]) variables = generateOperator x y "add" variables
 generateList (ListNode "-" [x, y]) variables = generateOperator x y "sub" variables
 generateList (ListNode "*" [x, y]) variables = generateOperator x y "mul" variables
@@ -67,17 +74,20 @@ generateList (ListNode "/" [x, y]) variables = generateOperator x y "div" variab
 generateList (ListNode "|" [x, y]) variables = generateOperator x y "oor" variables
 generateList (ListNode "&" [x, y]) variables = generateOperator x y "and" variables
 generateList (ListNode "^" [x, y]) variables = generateOperator x y "xor" variables
-generateList (ListNode "=" [x, y]) variables = generateOperator x y "sub" variables
+generateList (ListNode "=" [x, y]) variables = generateOperator x y "equ" variables
 generateList (ListNode "if" [x, y, z]) (variables, ifs) = do
     e <- generateExpression x (variables, ifs) 5
     (true, _) <- generateStatement y (variables, ifs)  
     (false, _) <- generateStatement z (variables, ifs)  
     return (e ++ "jrz 5 _else" ++ show ifs ++ "\n" ++ true ++ "jmp _end" ++ show ifs ++ "\n_else" ++ show ifs ++ ":\n" ++ false ++ "_end" ++ show ifs ++ ":\n", (variables, ifs + 1))
+generateList (ListNode "{-}" x) context = do 
+    (code, ctx) <- generateBlock x context 
+    return (code ++ (foldr (++) "" (map (const generatePop) [0..(length ctx - length context)])), context)
 generateList _ _ = Nothing
 
 -- Constant for code that provides popping
 generatePop :: String 
-generatePop = "srv 5 1\nsub 0 5 0"
+generatePop = "srv 5 1\nsub 0 5 0\n"
 
 wordToType :: String -> Maybe Type
 wordToType "int" = Just Int

@@ -1,5 +1,8 @@
 (if 
-    0
-    (putchar 'c')
+    (= 1 1)
+    ({-}
+        (let parek int 10)
+        (out parek)
+    )
     (putchar 's')
 )

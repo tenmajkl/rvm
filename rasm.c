@@ -180,31 +180,25 @@ int translateInstruction(char* instruction, Label labels[], int label_count, uin
         return 1;
     }
 
-    if (sscanf(instruction, "out %i", &arg1) == 1) {
+    if (sscanf(instruction, "sys %i %i", &arg1, &arg2) == 2) {
         if (arg1 > 15) {
+            puts("position value too big");
+			return 0;
+        }
+
+        if (arg2 > 15) {
             puts("register value too big");
 			return 0;
         }
 
         result[0] = 13;
         result[1] = arg1; 
-        result[2] = 0;
+        result[2] = arg2;
         result[3] = 0;
         return 1;
     }
 
-    if (sscanf(instruction, "cht %i", &arg1) == 1) {
-        if (arg1 > 15) {
-            puts("register value too big");
-			return 0;
-        }
-
-        result[0] = 14;
-        result[1] = arg1; 
-        result[2] = 0;
-        result[3] = 0;
-        return 1;
-    }
+    ARITHMETIC("equ", 14)
 
     return 0;
 }
@@ -256,7 +250,7 @@ void translate(FILE* from, FILE* to)
             printf("error at action %i", action);
             return;
         }
-        // printf("%i %i %i %i\n", instruction[0], instruction[1], instruction[2], instruction[3]);
+        //printf("%i %i %i %i\n", instruction[0], instruction[1], instruction[2], instruction[3]);
         fwrite(&instruction, sizeof(uint8_t), 4, to);
     }
 

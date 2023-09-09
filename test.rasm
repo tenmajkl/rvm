@@ -1,12 +1,23 @@
 srv 0 0
 srv 1 0
-srv 5 0
+srv 6 1
+srv 7 1
+equ 6 7 5
+add 5 15 5
 jrz 5 _else0
-srv 5 99
-cht 5
+srv 5 10
+srv 4 1
+set 0 5
+add 0 4 0
+srv 4 0
+add 1 4 4
+get 4 5
+sys 0 5
+srv 5 1
+sub 0 5 0
 jmp _end0
 _else0:
 srv 5 115
-cht 5
+sys 1 5
 _end0:
 hlt
