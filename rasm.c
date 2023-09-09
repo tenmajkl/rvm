@@ -31,7 +31,7 @@ typedef struct {
 int labelValue(Label labels[], int label_count, char* label)
 {
     for (int index = 0; index < label_count; index++) {
-        if (strcmp(labels[index].name, label)) {
+        if (strcmp(labels[index].name, label) == 0) {
             return labels[index].action;
         }
     }
@@ -95,7 +95,7 @@ int translateInstruction(char* instruction, Label labels[], int label_count, uin
         arg1 = labelValue(labels, label_count, sarg);
 
         if (arg1 == -1) {
-            printf("Label %s doesnt exist", sarg);
+            printf("Label %s doesnt exist\n", sarg);
             return 0;
         }
 
@@ -133,7 +133,7 @@ int translateInstruction(char* instruction, Label labels[], int label_count, uin
         arg2 = labelValue(labels, label_count, sarg);
 
         if (arg2 == -1) {
-            printf("Label %s doesnt exist", sarg);
+            printf("Label %s doesnt exist\n", sarg);
             return 0;
         }
 
@@ -217,6 +217,10 @@ void translate(FILE* from, FILE* to)
     int label_count = 0;
     uint8_t instruction[4] = {};
     int i;
+
+    char lines[64][64];
+    int line_count = 0;
+
     while ((i = fscanf(from, "\n%[^\n]s\n", line)) == 1) { // i have no idea
         if (line[0] == 0) {
             continue;
@@ -227,23 +231,33 @@ void translate(FILE* from, FILE* to)
         }
 
         if (line[0] == '_') {
-            labels[label_count].action = action;
+            labels[label_count].action = line_count;
             if (sscanf(line, "_%15s:", labels[label_count].name) != 1) {
                 puts("label not syntacticaly correct");
 		 	    return;
             }
 
+            int index;
+            char* name = labels[label_count].name;
+            for (index = 0; name[index]; index++) {}
+
+            name[index - 1] = 0; // trimming last char
+
             label_count++;
             continue;    
         }
 
-        if (!translateInstruction(line, labels, label_count, instruction)) {
+        strcpy(lines[line_count], line);
+        line_count++;
+    }
+
+    for (; action < line_count; action++) {
+        if (!translateInstruction(lines[action], labels, label_count, instruction)) {
             printf("error at action %i", action);
             return;
         }
-        //printf("%i %i %i %i\n", instruction[0], instruction[1], instruction[2], instruction[3]);
+        // printf("%i %i %i %i\n", instruction[0], instruction[1], instruction[2], instruction[3]);
         fwrite(&instruction, sizeof(uint8_t), 4, to);
-        action++;
     }
 
 }

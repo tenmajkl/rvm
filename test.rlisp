@@ -1,3 +1,5 @@
-(let parek int 10) 
-(let rizek int (+ parek 2)) 
-(out rizek)
+(if 
+    0
+    (putchar 'c')
+    (putchar 's')
+)
