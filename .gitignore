@@ -1,2 +1,4 @@
 /target
 dist-newstyle
+rlc/*.o
+rlc/*.hi

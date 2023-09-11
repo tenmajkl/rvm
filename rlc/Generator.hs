@@ -60,6 +60,9 @@ generateVariableAddress :: AST -> [Variable] -> Int ->  Maybe String
 generateVariableAddress (WordNode w) vs reg = do 
     (_, address, t) <- find (\(x, _, _) -> x == w) vs
     return ("srv " ++ show reg ++ " " ++ show address ++ "\n")
+generateVariableAddress (ListNode "@" [e]) vs reg = do
+    e <- generateVariableAddress e vs 4
+    return (e ++ "get 4 " ++ show reg ++ "\n")
 generateVariableAddress _ _ _ = Nothing 
 
 
@@ -101,7 +104,10 @@ generateList (ListNode "while" [x, y]) (variables, ifs, whiles) = do
     return ("_while" ++ show whiles ++ ":\n" ++ e ++ "jrz 5 _endwhile" ++ show whiles ++ "\n" ++ code ++ "jmp _while" ++ show whiles ++ "\n_endwhile"++ show whiles ++ ":\n" ++ generateStackCleaning variables new_variables, (variables, ifs, whiles + 1))
 generateList (ListNode "{-}" x) (variables, ifs, whiles) = do 
     (code, (new_variables, new_ifs, new_whiles)) <- generateBlock x (variables, ifs, whiles) 
-    return (code, (variables, new_ifs, new_whiles)) 
+    return (code, (variables, new_ifs, new_whiles))
+generateList (ListNode "$" [w]) (variables, ifs, whiles) = do
+    v <- generateVariableAddress w variables 5
+    return (v, (variables, ifs, whiles))
 generateList _ _ = Nothing
 
 -- Constant for code that provides popping

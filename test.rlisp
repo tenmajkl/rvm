@@ -1,8 +1,4 @@
 (let parek int 0)
-(while 
-    (! (= parek 10))
-    ({-}
-        (out parek)
-        (set parek (+ parek 1))
-    )
-)
+(let rizek int ($ parek))
+(set (@ rizek) 10)
+(out parek)

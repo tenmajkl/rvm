@@ -4,31 +4,17 @@ srv 5 0
 srv 4 1
 set 0 5
 add 0 4 0
-_while0:
-srv 4 0
-add 1 4 4
-get 4 6
-srv 7 10
-equ 6 7 5
+srv 5 0
 add 5 15 5
 srv 4 1
-xor 5 4 5
-add 5 15 5
-jrz 5 _endwhile0
+set 0 5
+add 0 4 0
+srv 5 10
+srv 4 1
+get 4 4
+set 4 5
 srv 4 0
 add 1 4 4
 get 4 5
 sys 0 5
-srv 4 0
-add 1 4 4
-get 4 6
-srv 7 1
-add 6 7 5
-add 5 15 5
-srv 4 0
-set 4 5
-jmp _while0
-_endwhile0:
-srv 5 1
-sub 0 5 0
 hlt
