@@ -1,4 +1,6 @@
 (let parek int 0)
+(let cus int 1)
 (let rizek int ($ parek))
+(set rizek (+ rizek 1))
 (set (@ rizek) 10)
-(out parek)
+(out cus)
